@@ -1,0 +1,25 @@
+{
+    "pareto_burst_length_distribution": 
+    {
+        "Good": {
+            "transitions": {"Good": 1, "Bad": 0.0},
+            "distribution": "pareto",
+            "params": {"alpha": 3, "lambda": 1.11}
+        },
+        "Bad": {
+            "transitions": {"Bad": 0.90, "Good": 0.10},
+            "distribution": "exponential",
+            "params": {"mu": 44.36}
+        }
+    },
+    "classic": {
+        "Good": {
+            "transitions": {"Good": 0.95, "Bad": 0.05},
+            "params": {"k": 1}
+        },
+        "Bad": {
+            "transitions": {"Good": 0.1, "Bad": 0.9},
+            "params": {"h": 0.4}
+        }
+    }
+}
