@@ -52,7 +52,7 @@ emulator.start()
 
 ### Emulation Architecture
 
-![Network Emulation Architecture](files/emulation.png)
+![Network Emulation Architecture](files/emulation_fig.png)
 
 
 ### Configuration File Example (config.json):
