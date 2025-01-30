@@ -37,6 +37,17 @@ A Python implementation of Gilbert-Elliott packet loss models with advanced netw
 python src/pyge/configurationUI.py
 ```
 
+### GUI Configuration Interface:
+
+![GUI Configuration Interface](files/GUI.png)
+
+
+### Launch Network Emulator:
+
+```bash
+python src/pyge/network_emulator.py --input-port 5000 --output-port 5001 --protocol udp --model GE_Pareto_BLL --config config.json --log packet_logs.bin
+```
+
 ### Programmatic Emulator Control:
 ```python
 from pyge.network_emulator import NetworkEmulator

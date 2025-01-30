@@ -16,6 +16,13 @@ class ConfigEditor:
         self.window.geometry("1200x800")
         ctk.set_appearance_mode("dark")
         
+        # Store references to prevent garbage collection of callbacks
+        self.update_callback = None
+        self.dpi_callback = None
+        
+        # Cancel any pending callbacks when window closes
+        self.window.protocol("WM_DELETE_WINDOW", self.on_closing)
+        
         # Main container
         self.main_container = ctk.CTkFrame(self.window)
         self.main_container.pack(fill="both", expand=True, padx=20, pady=20)
@@ -105,6 +112,10 @@ class ConfigEditor:
         
         # Initial graph update
         self.update_transition_graphs()
+        
+        # Initialize DPI check callback
+        self.dpi_callback = None
+        self.check_dpi_scaling_initial()
         
     def create_pareto_controls(self):
         states = ["Good", "Bad", "Intermediate1", "Intermediate2"]
@@ -393,8 +404,34 @@ class ConfigEditor:
     def run(self):
         self.window.mainloop()
 
+    def on_closing(self):
+        """Clean up all callbacks before closing"""
+        # Cancel pending updates
+        if self.update_callback:
+            self.window.after_cancel(self.update_callback)
+        if self.dpi_callback:
+            self.window.after_cancel(self.dpi_callback)
+            
+        # Destroy all widgets and terminate
+        self.window.quit()
+        self.window.destroy()
+
+    def check_dpi_scaling_initial(self):
+        """Initial DPI scaling check with proper callback cleanup"""
+        self.check_dpi_scaling()
+        self.dpi_callback = self.window.after(1000, self.check_dpi_scaling_initial)
+
+    def check_dpi_scaling(self):
+        """DPI scaling check implementation"""
+        # Your existing DPI check logic here
+        # ... existing code ...
+
     def update_transition_graphs(self):
         try:
+            # Cancel any pending update
+            if self.update_callback:
+                self.window.after_cancel(self.update_callback)
+            
             # Update Pareto BLL graph
             self.update_graph(
                 ax=self.pareto_ax,
