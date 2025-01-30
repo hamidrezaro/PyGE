@@ -177,12 +177,7 @@ class ConfigEditor:
         for i, from_state in enumerate(states):
             ctk.CTkLabel(matrix_frame, text=from_state).grid(row=i+1, column=0)
             for j, to_state in enumerate(states):
-                entry = ctk.CTkEntry(
-                    matrix_frame,
-                    width=60,
-                    placeholder_text="0.0"
-                )
-                entry.grid(row=i+1, column=j+1, padx=2, pady=2)
+                entry = self.create_transition_entry(matrix_frame, i+1, j+1)
                 self.pareto_sliders[f"{from_state}_to_{to_state}"] = entry
                 
                 # Set default value
@@ -257,12 +252,7 @@ class ConfigEditor:
         for i, from_state in enumerate(states):
             ctk.CTkLabel(matrix_frame, text=from_state).grid(row=i+1, column=0)
             for j, to_state in enumerate(states):
-                entry = ctk.CTkEntry(
-                    matrix_frame,
-                    width=60,
-                    placeholder_text="0.0"
-                )
-                entry.grid(row=i+1, column=j+1, padx=2, pady=2)
+                entry = self.create_transition_entry(matrix_frame, i+1, j+1)
                 self.classic_sliders[f"{from_state}_to_{to_state}"] = entry
                 
                 # Set default value
@@ -302,6 +292,17 @@ class ConfigEditor:
         
         return slider
 
+    def create_transition_entry(self, matrix_frame, row, col):
+        entry = ctk.CTkEntry(
+            matrix_frame,
+            width=60,
+            placeholder_text="0.0"
+        )
+        entry.grid(row=row, column=col, padx=2, pady=2)
+        # Bind the entry to update graphs when value changes
+        entry.bind('<KeyRelease>', lambda e: self.update_transition_graphs())
+        return entry
+
     def load_config(self):
         filename = filedialog.askopenfilename(
             filetypes=[("JSON files", "*.json")]
@@ -314,7 +315,7 @@ class ConfigEditor:
     def update_ui_from_config(self):
         # Update Pareto BLL values
         for state in ["Good", "Bad", "Intermediate1", "Intermediate2"]:
-            state_data = self.config_data["geparetobll"][state]
+            state_data = self.config_data["GE_Pareto_BLL"][state]
             
             # Update parameters
             self.pareto_sliders[f"{state}_alpha"].set(
@@ -331,7 +332,7 @@ class ConfigEditor:
         
         # Update Classic values
         for state in ["Good", "Bad"]:
-            state_data = self.config_data["geclassic"][state]
+            state_data = self.config_data["GE_Classic"][state]
             
             # Update parameters
             param_name = "k" if state == "Good" else "h"
@@ -348,13 +349,13 @@ class ConfigEditor:
 
     def save_config(self):
         config = {
-            "geparetobll": {},
-            "geclassic": {}
+            "GE_Pareto_BLL": {},
+            "GE_Classic": {}
         }
         
         # Save Pareto BLL configuration
         for state in ["Good", "Bad", "Intermediate1", "Intermediate2"]:
-            config["geparetobll"][state] = {
+            config["GE_Pareto_BLL"][state] = {
                 "transitions": {},
                 "distribution": "pareto",
                 "params": {
@@ -364,13 +365,13 @@ class ConfigEditor:
             }
             
             for target in ["Good", "Bad", "Intermediate1", "Intermediate2"]:
-                config["geparetobll"][state]["transitions"][target] = \
+                config["GE_Pareto_BLL"][state]["transitions"][target] = \
                     float(self.pareto_sliders[f"{state}_to_{target}"].get())
         
         # Save Classic configuration
         for state in ["Good", "Bad"]:
             param_name = "k" if state == "Good" else "h"
-            config["geclassic"][state] = {
+            config["GE_Classic"][state] = {
                 "transitions": {},
                 "params": {
                     param_name: self.classic_sliders[f"{state}_{param_name}"].get()
@@ -378,7 +379,7 @@ class ConfigEditor:
             }
             
             for target in ["Good", "Bad"]:
-                config["geclassic"][state]["transitions"][target] = \
+                config["GE_Classic"][state]["transitions"][target] = \
                     float(self.classic_sliders[f"{state}_to_{target}"].get())
         
         filename = filedialog.asksaveasfilename(

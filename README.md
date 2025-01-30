@@ -44,8 +44,11 @@ from pyge.network_emulator import NetworkEmulator
 emulator = NetworkEmulator(
     input_port=6000,
     output_port=6001,
+    output_ip='127.0.0.1',  # Destination IP address
     model_name='GE_Pareto_BLL',
-    params_path='config.json'
+    params_path='config.json',
+    log_packets=True,  # Enable packet logging
+    log_path='packet_log.bin'  # Path to save packet logs
 )
 emulator.start()
 ```
@@ -56,14 +59,60 @@ emulator.start()
 ### Configuration File Example (config.json):
 ```json
 {
-    "model": "GE_Pareto_BLL",
-    "parameters": {
-        "p": 0.0393,
-        "q": 0.1862,
-        "shape": 2.5192,
-        "scale": 19.7564
-    },
-    "log_path": "network_log.bin"
+    "GE_Pareto_BLL": {
+        "Good": {
+            "transitions": {
+                "Good": 0.75,
+                "Bad": 0.05,
+                "Intermediate1": 0.1,
+                "Intermediate2": 0.1
+            },
+            "distribution": "pareto",
+            "params": {
+                "alpha": 3.0,
+                "lambda": 6.0
+            }
+        },
+        "Bad": {
+            "transitions": {
+                "Good": 0.05,
+                "Bad": 0.75,
+                "Intermediate1": 0.1,
+                "Intermediate2": 0.1
+            },
+            "distribution": "pareto", 
+            "params": {
+                "alpha": 3.0,
+                "lambda": 6.0
+            }
+        },
+        "Intermediate1": {
+            "transitions": {
+                "Good": 0.1,
+                "Bad": 0.1,
+                "Intermediate1": 0.7,
+                "Intermediate2": 0.1
+            },
+            "distribution": "pareto",
+            "params": {
+                "alpha": 3.0,
+                "lambda": 6.0
+            }
+        },
+        "Intermediate2": {
+            "transitions": {
+                "Good": 0.1,
+                "Bad": 0.1,
+                "Intermediate1": 0.1,
+                "Intermediate2": 0.7
+            },
+            "distribution": "pareto",
+            "params": {
+                "alpha": 3.0,
+                "lambda": 6.0
+            }
+        }
+    }
 }
 ```
 
@@ -111,6 +160,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## Contact
 
-Project Maintainer: Hamid Reza Roodabeg  
+Project Maintainer: Hamid Reza Roodabeh 
 Email: hr.roodabeh@gmail.com  
 Project Link: https://github.com/hamidrezaro/PyGE
