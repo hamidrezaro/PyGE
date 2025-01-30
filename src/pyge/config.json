@@ -1,5 +1,5 @@
 {
-    "pareto_burst_length_distribution": {
+    "geparetobll": {
         "Good": {
             "transitions": {
                 "Good": 0.959,
@@ -53,14 +53,14 @@
             }
         }
     },
-    "classic": {
+    "geclassic": {
         "Good": {
             "transitions": {
-                "Good": 0.95,
-                "Bad": 0.05
+                "Good": 1.0,
+                "Bad": 0.0
             },
             "params": {
-                "k": 1
+                "k": 0.7
             }
         },
         "Bad": {
