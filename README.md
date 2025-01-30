@@ -50,8 +50,6 @@ emulator = NetworkEmulator(
 emulator.start()
 ```
 
-### Emulation Architecture
-
 ![Network Emulation Architecture](files/emulation_fig.png)
 
 

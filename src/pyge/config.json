@@ -1,5 +1,5 @@
 {
-    "geparetobll": {
+    "GE_Pareto_BLL": {
         "Good": {
             "transitions": {
                 "Good": 0.959,
@@ -53,7 +53,7 @@
             }
         }
     },
-    "geclassic": {
+    "GE_Classic": {
         "Good": {
             "transitions": {
                 "Good": 1.0,

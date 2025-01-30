@@ -204,7 +204,7 @@ if __name__ == "__main__":
     emulator = NetworkEmulator(
         input_port=EMULATOR_PORT,
         output_port=RECEIVER_PORT,
-        model_name='GEClassic',
+        model_name='GE_Classic',
         params_path='./src/pyge/config.json',
         protocol='udp',
         log_packets=True,

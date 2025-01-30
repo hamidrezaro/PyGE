@@ -40,10 +40,10 @@ class NetworkEmulator:
         with open(params_path) as f:
             params = json.load(f)
             
-        if model_name.lower() == 'geclassic':
+        if model_name.lower() == 'GE_Classic':
             params = params['geclassic']
             return GEClassicModel(params)
-        elif model_name.lower() == 'geparetobll':
+        elif model_name.lower() == 'GE_Pareto_BLL':
             params = params['geparetobll']
             return GEParetoBLLModel(params)
         else:
@@ -234,37 +234,50 @@ class NetworkEmulator:
 
 # Example usage:
 if __name__ == "__main__":
-    # Set up global signal handler
-    def global_signal_handler(signum, frame):
-        udp_emulator.stop()
-        tcp_emulator.stop()
-        sys.exit(0)
-        
-    signal.signal(signal.SIGINT, global_signal_handler)
-    signal.signal(signal.SIGTERM, global_signal_handler)
+    import argparse
 
-    # For UDP
-    udp_emulator = NetworkEmulator(
-        input_port=5000,
-        output_port=5001,
-        model_name='GEParetoBLL',
-        params_path='./src/pyge/config.json',
-        protocol='udp'
+    # Set up argument parser
+    parser = argparse.ArgumentParser(description='Network packet loss emulator')
+    parser.add_argument('--input-port', type=int, required=True,
+                      help='Port to listen for incoming packets')
+    parser.add_argument('--output-port', type=int, required=True, 
+                      help='Port to forward packets to')
+    parser.add_argument('--output-ip', default='127.0.0.1',
+                      help='IP address to forward packets to (default: 127.0.0.1)')
+    parser.add_argument('--protocol', choices=['tcp', 'udp'], required=True,
+                      help='Network protocol (tcp or udp)')
+    parser.add_argument('--model', choices=['GE_Classic', 'GE_Pareto_BLL'], required=True,
+                      help='Packet loss model to use')
+    parser.add_argument('--config', required=True,
+                      help='Path to model parameters config file')
+    parser.add_argument('--log', help='Path to packet log file (optional)')
+
+    args = parser.parse_args()
+
+    # Set up signal handler
+    def signal_handler(signum, frame):
+        emulator.stop()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    # Create and start emulator
+    emulator = NetworkEmulator(
+        input_port=args.input_port,
+        output_port=args.output_port,
+        output_ip=args.output_ip,
+        model_name=args.model,
+        params_path=args.config,
+        protocol=args.protocol,
+        log_packets=bool(args.log),
+        log_path=args.log if args.log else "packet_log.bin"
     )
-    
-    # For TCP
-    tcp_emulator = NetworkEmulator(
-        input_port=6000,
-        output_port=6001,
-        model_name='GEClassic',
-        params_path='./src/pyge/config.json',
-        protocol='tcp'
-    )
-    
+
     try:
-        udp_emulator.start()
-        tcp_emulator.start()
+        emulator.start()
         while True:
             time.sleep(1)
     except Exception as e:
-        global_signal_handler(None, None)
+        print(f"Error: {e}")
+        signal_handler(None, None)
