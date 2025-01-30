@@ -50,6 +50,11 @@ emulator = NetworkEmulator(
 emulator.start()
 ```
 
+### Emulation Architecture
+
+![Network Emulation Architecture](files/emulation.png)
+
+
 ### Configuration File Example (config.json):
 ```json
 {
