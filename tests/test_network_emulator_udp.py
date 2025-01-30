@@ -16,9 +16,9 @@ def packet_sender(host: str, port: int, num_packets: int):
     for i in range(num_packets):
         data = struct.pack('!I', i)  # 4-byte sequence number
         sock.sendto(data, (host, port))
-        if i % 1000 == 0 and i > 0:
+        # Reduced progress reporting frequency and removed sleep
+        if i % 2000 == 0 and i > 0:  # Update every 20% for 10,000 packets
             print(f"[Sender] Sent {i}/{num_packets} packets ({i/num_packets:.0%})")
-        time.sleep(0.0001)  # Small delay to avoid overwhelming
     
     sock.close()
     duration = time.time() - start_time

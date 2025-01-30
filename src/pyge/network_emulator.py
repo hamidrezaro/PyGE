@@ -40,11 +40,11 @@ class NetworkEmulator:
         with open(params_path) as f:
             params = json.load(f)
             
-        if model_name.lower() == 'GE_Classic':
-            params = params['geclassic']
+        if model_name.lower() == 'GE_Classic'.lower():
+            params = params['GE_Classic']
             return GEClassicModel(params)
-        elif model_name.lower() == 'GE_Pareto_BLL':
-            params = params['geparetobll']
+        elif model_name.lower() == 'GE_Pareto_BLL'.lower():
+            params = params['GE_Pareto_BLL']
             return GEParetoBLLModel(params)
         else:
             raise ValueError(f"Unknown model: {model_name}")
