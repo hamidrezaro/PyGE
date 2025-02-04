@@ -56,17 +56,18 @@
     "GE_Classic": {
         "Good": {
             "transitions": {
-                "Good": 1.0,
-                "Bad": 0.0
+                "Good": 0.95,
+                "Bad": 0.05
             },
+
             "params": {
-                "k": 0.7
+                "k": 0.98
             }
         },
         "Bad": {
             "transitions": {
-                "Good": 0.1,
-                "Bad": 0.9
+                "Good": 0.25,
+                "Bad": 0.75
             },
             "params": {
                 "h": 0.4
