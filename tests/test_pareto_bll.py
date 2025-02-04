@@ -5,8 +5,8 @@ from copy import deepcopy
 import numpy as np
 
 import json
-with open('src/pyge/config.json', 'r') as file:
-    state_params = json.load(file)["pareto_burst_length_distribution"]
+with open('src/pyge/canonical_configs/packet_loss_config.json', 'r') as file:
+    state_params = json.load(file)["GE_Pareto_BLL"]
 
 def simulate_pareto_bll(state_params, total_packets=1000, starting_state='Good'):
     # Instantiate the model

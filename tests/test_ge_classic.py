@@ -2,8 +2,8 @@ from pyge.models import GEClassicModel
 from copy import deepcopy
 
 import json
-with open('src/pyge/config.json', 'r') as file:
-    state_params = json.load(file)["classic"]
+with open('src/pyge/canonical_configs/packet_loss_config.json', 'r') as file:
+    state_params = json.load(file)["GE_Classic"]
 
 # Instantiate the model
 def simulate_ge(state_params, total_packets=1000, starting_state='Good'):

@@ -3,10 +3,8 @@ import time
 import numpy as np
 from scipy.optimize import minimize_scalar
 
+from pyge.models.utils import pareto_type_ii_sample
 
-def pareto_type_ii_sample(alpha, lambda_param, size=1):
-    u = np.random.uniform(0, 1, size)  # Uniform random values
-    return lambda_param * ((1 - u) ** (-1 / alpha) - 1)
 
 def calculate_required_parameters(target_loss_rate, fixed_alpha=None, fixed_lambda=None, tolerance=1e-4):
     """

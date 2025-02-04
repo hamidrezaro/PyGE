@@ -5,9 +5,7 @@ from scipy.optimize import minimize_scalar
 from tqdm import tqdm
 import argparse
 
-def pareto_type_ii_sample(alpha, lambda_param, size=1):
-    u = np.random.uniform(0, 1, size)
-    return lambda_param * ((1 - u) ** (-1 / alpha) - 1)
+from pyge.models.utils import pareto_type_ii_sample
 
 def calculate_required_parameters(target_avg_bll, fixed_alpha=None, fixed_lambda=None, num_samples=100000):
     """Find parameters that achieve target average Backlog Loss Length (BLL)"""
