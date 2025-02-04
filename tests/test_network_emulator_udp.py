@@ -1,11 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from pyge.network_emulator import NetworkEmulator
+from pyge.emulators.packet_loss_emulator import PacketLossEmulator
 import threading
 import time
 import socket
 import struct
 import lz4
+
 
 def packet_sender(host: str, port: int, num_packets: int):
     """Send UDP packets with sequence numbers"""
@@ -201,7 +202,7 @@ if __name__ == "__main__":
     
     # Start Network Emulator
     print("[Main] Starting network emulator...")
-    emulator = NetworkEmulator(
+    pl_emulator = PacketLossEmulator(
         input_port=EMULATOR_PORT,
         output_port=RECEIVER_PORT,
         model_name='GE_Classic',
@@ -221,7 +222,7 @@ if __name__ == "__main__":
     
     # Start emulator
     print("[Main] Starting emulator...")
-    emulator.start()
+    pl_emulator.start()
     time.sleep(1)  # Wait for emulator to initialize
     
     # Start sender
@@ -240,7 +241,7 @@ if __name__ == "__main__":
     print("[Main] Receiver thread completed")
     
     print("[Main] Stopping emulator...")
-    emulator.stop()
+    pl_emulator.stop()
     print("[Main] Emulator stopped")
     
     # Analyze and visualize

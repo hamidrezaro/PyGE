@@ -1,8 +1,8 @@
 import argparse
-from .find_param_for_lr import calculate_required_parameters as lr_calculator
-from .find_param_for_lr import simulate_loss_rate as lr_simulator
-from .find_params_for_bll import calculate_required_parameters as bll_calculator
-from .find_params_for_bll import simulate_bll_rate as bll_simulator
+from pyge.parameter_estimation.find_param_for_lr import calculate_required_parameters as lr_calculator
+from pyge.parameter_estimation.find_param_for_lr import simulate_loss_rate as lr_simulator
+from pyge.parameter_estimation.find_params_for_bll import calculate_required_parameters as bll_calculator
+from pyge.parameter_estimation.find_params_for_bll import simulate_bll_rate as bll_simulator
 
 def main():
     parser = argparse.ArgumentParser(

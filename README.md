@@ -50,9 +50,10 @@ python src/pyge/network_emulator.py --input-port 5000 --output-port 5001 --proto
 
 ### Programmatic Emulator Control:
 ```python
-from pyge.network_emulator import NetworkEmulator
+from pyge.emulators.packet_loss_emulator import PacketLossEmulator
 
-emulator = NetworkEmulator(
+
+emulator = PacketLossEmulator(
     input_port=6000,
     output_port=6001,
     output_ip='127.0.0.1',  # Destination IP address
