@@ -3,6 +3,7 @@ import threading
 import time
 import random
 import struct
+import json
 from collections import deque
 from threading import Lock, Event
 import lz4.frame
@@ -10,7 +11,7 @@ import numpy as np
 
 class PacketReorderEmulator:
     def __init__(self, input_port: int, output_port: int, 
-                 queue_length: int = 10,
+                 params: dict,
                  protocol: str = 'udp', output_ip: str = '127.0.0.1',
                  log_packets: bool = False, log_path: str = "reorder_log.bin"):
         """
@@ -19,7 +20,7 @@ class PacketReorderEmulator:
         Args:
             input_port (int): Port to listen for incoming packets
             output_port (int): Port to forward packets to
-            queue_length (int): Length of the reordering queue
+            params (dict): Dictionary containing emulator parameters (queue_length)
             protocol (str): Network protocol (currently only 'udp' supported)
             output_ip (str): IP address to forward packets to
             log_packets (bool): Whether to log packet reordering
@@ -29,11 +30,13 @@ class PacketReorderEmulator:
         self.output_port = output_port
         self.output_ip = output_ip
         self.protocol = protocol.lower()
-        self.queue_length = queue_length
         self.running = False
 
+        # Get queue length from params with default value
+        self.queue_length = params.get('queue_length', 10)
+
         # Packet queue and synchronization
-        self.packet_queue = deque(maxlen=queue_length)
+        self.packet_queue = deque(maxlen=self.queue_length)
         self.queue_lock = Lock()
         self.queue_not_empty = Event()
         self.queue_not_full = Event()
@@ -214,8 +217,8 @@ if __name__ == "__main__":
                       help='IP address to forward packets to (default: 127.0.0.1)')
     parser.add_argument('--protocol', choices=['udp'], default='udp',
                       help='Network protocol (default: udp)')
-    parser.add_argument('--queue-length', type=int, default=10,
-                      help='Length of reordering queue (default: 10)')
+    parser.add_argument('--params-path', required=True,
+                      help='Path to config file with queue_length parameter')
     parser.add_argument('--log', help='Path to packet log file (optional)')
 
     args = parser.parse_args()
@@ -233,7 +236,7 @@ if __name__ == "__main__":
         input_port=args.input_port,
         output_port=args.output_port,
         output_ip=args.output_ip,
-        queue_length=args.queue_length,
+        params_path=args.params_path,
         protocol=args.protocol,
         log_packets=bool(args.log),
         log_path=args.log if args.log else "reorder_log.bin"

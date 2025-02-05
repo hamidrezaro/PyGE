@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from pyge.emulators import DelayEmulator, PacketLossEmulator, PacketReorderEmulator
+from pyge.emulators import NetworkEmulator, DelayEmulator, PacketLossEmulator, PacketReorderEmulator
 import threading
 import time
 import socket
@@ -10,74 +10,15 @@ import random
 import string
 import json
 import argparse
-from collections import defaultdict
-from threading import Lock
 import lz4.frame
 from pathlib import Path
 
-class ThreadWithReturn(threading.Thread):
-    def __init__(self, target, args):
-        super().__init__()
-        self._target = target
-        self._args = args
-        self._result = None
+from test_utils import ThreadWithReturn
 
-    def run(self):
-        self._result = self._target(*self._args)
-
-    def join(self, timeout=None):
-        super().join(timeout)
-        return self._result
 
 def generate_random_payload(length=32):
     """Generate random string payload"""
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length)).encode()
-
-class NetworkEmulatorPipeline:
-    def __init__(self, emulators, start_port=5000):
-        """Initialize pipeline of network emulators"""
-        self.emulators = []
-        current_port = start_port
-        
-        for emulator_config in emulators:
-            emulator_type = emulator_config['type']
-            params = emulator_config['params']
-            
-            if emulator_type == 'delay':
-                emulator = DelayEmulator(
-                    input_port=current_port,
-                    output_port=current_port + 1,
-                    **params
-                )
-            elif emulator_type == 'loss':
-                emulator = PacketLossEmulator(
-                    input_port=current_port,
-                    output_port=current_port + 1,
-                    **params
-                )
-            elif emulator_type == 'reorder':
-                emulator = PacketReorderEmulator(
-                    input_port=current_port,
-                    output_port=current_port + 1,
-                    **params
-                )
-            
-            self.emulators.append(emulator)
-            current_port += 1
-        
-        self.input_port = start_port
-        self.output_port = current_port
-        
-    def start(self):
-        """Start all emulators in the pipeline"""
-        for emulator in self.emulators:
-            emulator.start()
-            time.sleep(0.5)  # Allow each emulator to initialize
-            
-    def stop(self):
-        """Stop all emulators in the pipeline"""
-        for emulator in reversed(self.emulators):
-            emulator.stop()
 
 def packet_sender(host: str, port: int, num_packets: int):
     """Send UDP packets with sequence numbers and timestamps"""
@@ -388,10 +329,21 @@ def analyze_reorder_log(log_file: Path):
         'ordered_ratio': ordered_packets / len(reorder_numbers)
     }
 
-def run_scenario(scenario_num, config_path='./src/pyge/canonical_configs/master_config.json'):
+def run_scenario(scenario_num, config_path='./src/pyge/canonical_configs/'):
     """Run specified test scenario"""
-    with open(config_path) as f:
-        config = json.load(f)
+    config = {}
+    config_files = Path(config_path).glob('*.json')
+    for config_file in config_files:
+        with open(config_file) as f:
+            # Load individual config
+            emulator_config = json.load(f)
+            # Get emulator name from filename
+            emulator_name = config_file.stem
+            # Add to master config
+            config[emulator_name] = emulator_config
+    print(config)
+    return
+    
     
     NUM_PACKETS = 10_000
     START_PORT = 5000
@@ -449,13 +401,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Network Emulator Scenario Tests')
     parser.add_argument('scenario', type=int, choices=range(1, 6),
                       help='Scenario number (1-5)')
-    parser.add_argument('--config', default='./src/pyge/canonical_configs/master_config.json',
-                      help='Path to master config file')
+    parser.add_argument('--config_dir', default='./src/pyge/canonical_configs/',
+                        help='Path to the directory containing the emulator config files')
+    
     
     args = parser.parse_args()
     
     try:
-        stats = run_scenario(args.scenario, args.config)
+        stats = run_scenario(args.scenario, args.config_dir)
     except Exception as e:
         print(f"Error running scenario {args.scenario}: {str(e)}")
         raise

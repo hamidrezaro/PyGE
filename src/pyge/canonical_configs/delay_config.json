@@ -3,14 +3,10 @@
         "lower_bound": 15,
         "weights": [0.8, 0.2],
         "lambdas": [0.1, 0.0067]
-
-
     },
     "5G": {
         "lower_bound": 7.5,
         "weights": [0.8, 0.2],
         "lambdas": [0.2, 0.02]
     }
-
-
 }

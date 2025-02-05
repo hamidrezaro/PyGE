@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from pyge.emulators.reorder_emulator import PacketReorderEmulator
+from pyge.emulators.packet_reorder_emulator import PacketReorderEmulator
 import threading
 import time
 import socket
@@ -9,24 +9,14 @@ import struct
 import random
 import string
 from collections import defaultdict
+import json
+
+from test_utils import ThreadWithReturn
 
 def generate_random_payload(length=32):
     """Generate random string payload"""
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length)).encode()
 
-class ThreadWithReturn(threading.Thread):
-    def __init__(self, target, args):
-        super().__init__()
-        self._target = target
-        self._args = args
-        self._result = None
-
-    def run(self):
-        self._result = self._target(*self._args)
-
-    def join(self, timeout=None):
-        super().join(timeout)
-        return self._result
 
 def packet_sender(host: str, port: int, num_packets: int):
     """Send UDP packets with sequence numbers"""
@@ -192,17 +182,20 @@ if __name__ == "__main__":
     EMULATOR_PORT = 5000
     RECEIVER_PORT = 5001
     NUM_PACKETS = 10_000
-    QUEUE_LENGTH = 5  # Size of reordering window
-    
+    # Load parameters from config file
+    with open('./src/pyge/canonical_configs/packet_reorder_config.json') as f:
+        PARAMS = json.load(f)
+
     # Start Network Emulator
     print("[Main] Starting network emulator...")
     reorder_emulator = PacketReorderEmulator(
         input_port=EMULATOR_PORT,
         output_port=RECEIVER_PORT,
-        queue_length=QUEUE_LENGTH,
+        params=PARAMS,
         protocol='udp'
     )
     
+
     # Start receiver first
     print("[Main] Starting receiver thread...")
     receiver_thread = ThreadWithReturn(

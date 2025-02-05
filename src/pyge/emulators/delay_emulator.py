@@ -10,25 +10,46 @@ import struct
 import lz4.frame
 import heapq
 
-from pyge.models.delay_model import DelayModel
+from pyge.models import DelayModel
 
 
 class DelayEmulator:
     def __init__(self, input_port: int, output_port: int,
-                 params_path: str, network_type: str = '4G',
+                 params: dict, network_type: str = '4G',
                  protocol: str = 'udp', output_ip: str = '127.0.0.1',
                  log_packets: bool = False, log_path: str = "delay_log.bin"):
+        """
+        Initialize delay emulator.
+        
+        Args:
+            input_port (int): Port to listen for incoming packets
+            output_port (int): Port to forward packets to
+            params (dict): Dictionary containing delay model parameters
+            network_type (str): Network type (4G, 5G, etc.)
+            protocol (str): Network protocol (currently only 'udp' supported)
+            output_ip (str): IP address to forward packets to
+            log_packets (bool): Whether to log packet delays
+            log_path (str): Path to save packet log
+        """
         self.input_port = input_port
         self.output_port = output_port
         self.output_ip = output_ip
         self.protocol = protocol.lower()
         self.running = False
-        self.delay_model = self._init_delay_model(params_path, network_type)
+        
+        # Initialize delay model from params
+        model_params = params[network_type]
+        self.delay_model = DelayModel(
+            lower_bound=model_params['lower_bound'],
+            weights=model_params['weights'],
+            lambdas=model_params['lambdas']
+        )
 
         # Priority queue for delayed packets [(scheduled_time, data), ...]
         self.packet_queue = []
         self.queue_lock = Lock()
 
+        # Logging setup
         self.log_packets = log_packets
         self.log_path = log_path
         self.log_queue = deque()
@@ -36,18 +57,6 @@ class DelayEmulator:
         self.log_event = Event()
         self.log_thread = None
         self.forward_thread = None
-
-    def _init_delay_model(self, params_path: str, network_type: str):
-        """Initialize the delay model from config file"""
-        with open(params_path) as f:
-            params = json.load(f)
-
-        model_params = params[network_type]
-        return DelayModel(
-            lower_bound=model_params['lower_bound'],
-            weights=model_params['weights'],
-            lambdas=model_params['lambdas']
-        )
 
     def _init_logger(self):
         """Initialize packet logging system"""
@@ -217,7 +226,7 @@ if __name__ == "__main__":
         output_port=args.output_port,
         output_ip=args.output_ip,
         network_type=args.network_type,
-        params_path=args.config,
+        params=json.load(open(args.config)),
         protocol=args.protocol,
         log_packets=bool(args.log),
         log_path=args.log if args.log else "delay_log.bin"

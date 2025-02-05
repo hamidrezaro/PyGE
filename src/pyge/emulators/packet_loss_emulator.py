@@ -12,15 +12,28 @@ import lz4.frame
 
 class PacketLossEmulator:
     def __init__(self, input_port: int, output_port: int, 
-                 model_name: str, params_path: str, 
+                 model_name: str, params: dict, 
                  protocol: str = 'udp', output_ip: str = '127.0.0.1',
                  log_packets: bool = False, log_path: str = "packet_log.bin"):
+        """
+        Initialize packet loss emulator.
+        
+        Args:
+            input_port (int): Port to listen for incoming packets
+            output_port (int): Port to forward packets to
+            model_name (str): Name of the loss model (GE_Classic or GE_Pareto_BLL)
+            params (dict): Dictionary containing model parameters
+            protocol (str): Network protocol (currently only 'udp' supported)
+            output_ip (str): IP address to forward packets to
+            log_packets (bool): Whether to log packet losses
+            log_path (str): Path to save packet log
+        """
         self.input_port = input_port
         self.output_port = output_port
         self.output_ip = output_ip
         self.protocol = protocol.lower()
         self.running = False
-        self.loss_model = self._init_loss_model(model_name, params_path)
+        self.loss_model = self._init_loss_model(model_name, params)
 
         self.log_packets = log_packets
         self.log_path = log_path
@@ -29,17 +42,14 @@ class PacketLossEmulator:
         self.log_event = Event()
         self.log_thread = None
 
-    def _init_loss_model(self, model_name: str, params_path: str):
-        """Initialize the packet loss model from config file"""
-        with open(params_path) as f:
-            params = json.load(f)
-            
+    def _init_loss_model(self, model_name: str, params: dict):
+        """Initialize the packet loss model from parameters"""
         if model_name.lower() == 'GE_Classic'.lower():
-            params = params['GE_Classic']
-            return GEClassicModel(params)
+            model_params = params['GE_Classic']
+            return GEClassicModel(model_params)
         elif model_name.lower() == 'GE_Pareto_BLL'.lower():
-            params = params['GE_Pareto_BLL']
-            return GEParetoBLLModel(params)
+            model_params = params['GE_Pareto_BLL']
+            return GEParetoBLLModel(model_params)
         else:
             raise ValueError(f"Unknown model: {model_name}")
 
@@ -202,7 +212,7 @@ if __name__ == "__main__":
         output_port=args.output_port,
         output_ip=args.output_ip,
         model_name=args.model,
-        params_path=args.config,
+        params=json.load(open(args.config)),
 
         protocol=args.protocol,
         log_packets=bool(args.log),

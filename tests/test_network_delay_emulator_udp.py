@@ -10,6 +10,9 @@ import random
 import string
 import seaborn as sns
 from collections import defaultdict
+import json
+
+from test_utils import ThreadWithReturn
 
 def generate_random_payload(length=32):
     """Generate random string payload"""
@@ -179,19 +182,6 @@ def visualize_results(stats):
     plt.show()
     print("[Visualization] Displaying results window")
 
-class ThreadWithReturn(threading.Thread):
-    def __init__(self, target, args):
-        super().__init__()
-        self._target = target
-        self._args = args
-        self._result = None
-
-    def run(self):
-        self._result = self._target(*self._args)
-
-    def join(self, timeout=None):
-        super().join(timeout)
-        return self._result
 
 if __name__ == "__main__":
     # Configuration
@@ -199,13 +189,18 @@ if __name__ == "__main__":
     RECEIVER_PORT = 5001
     NUM_PACKETS = 1_000_000  # Changed to 1 million packets
     
+    # Load delay config
+    print("[Main] Loading delay configuration...")
+    with open('./src/pyge/canonical_configs/delay_config.json', 'r') as f:
+        delay_params = json.load(f)
+
     # Start Network Emulator
     print("[Main] Starting network emulator...")
     delay_emulator = DelayEmulator(
         input_port=EMULATOR_PORT,
         output_port=RECEIVER_PORT,
         network_type='4G',
-        params_path='./src/pyge/canonical_configs/delay_config.json',
+        params=delay_params,
         protocol='udp'
     )
     
