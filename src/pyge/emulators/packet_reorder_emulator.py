@@ -13,7 +13,8 @@ class PacketReorderEmulator:
     def __init__(self, input_port: int, output_port: int, 
                  params: dict,
                  protocol: str = 'udp', output_ip: str = '127.0.0.1',
-                 log_packets: bool = False, log_path: str = "reorder_log.bin"):
+                 log_packets: bool = False, log_path: str = "reorder_log.bin",
+                 wait_for_full_queue: bool = False):
         """
         Initialize packet reorder emulator.
         
@@ -25,6 +26,7 @@ class PacketReorderEmulator:
             output_ip (str): IP address to forward packets to
             log_packets (bool): Whether to log packet reordering
             log_path (str): Path to save packet log
+            wait_for_full_queue (bool): If True, only relay packets when queue is full
         """
         self.input_port = input_port
         self.output_port = output_port
@@ -49,6 +51,8 @@ class PacketReorderEmulator:
         self.log_lock = Lock()
         self.log_event = Event()
         self.log_thread = None
+
+        self.wait_for_full_queue = wait_for_full_queue
 
     def _init_logger(self):
         """Initialize packet logging system"""
@@ -105,30 +109,31 @@ class PacketReorderEmulator:
         """Forward packets from queue in random order"""
         forward_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         packet_counter = 0
-        # For the first time, wait until packet queue is full
+
         while self.running:
-            with self.queue_lock:
-                if len(self.packet_queue) >= self.queue_length:
+            if self.wait_for_full_queue:
+                # Wait until queue is full before processing
+                while self.running and len(self.packet_queue) < self.queue_length:
+                    time.sleep(0.001)
+                if not self.running:
                     break
-            time.sleep(0.1)
-        
-        while self.running:
-            self.queue_not_empty.wait(timeout=0.1)  # Wait for packets
-            
+            else:
+                # Original behavior - wait for any packets
+                self.queue_not_empty.wait(timeout=0.1)
+
             with self.queue_lock:
-                if len(self.packet_queue) > 0:
+                if len(self.packet_queue) > 0 and (not self.wait_for_full_queue or len(self.packet_queue) == self.queue_length):
                     # Randomly select a packet from queue
                     idx = random.randrange(len(self.packet_queue))
                     data, seq = self.packet_queue[idx]
-                    self.packet_queue[idx] = self.packet_queue[-1]  # Move last packet to selected position
-                    self.packet_queue.pop()  # Remove last packet
-                    
+                    self.packet_queue[idx] = self.packet_queue[-1]
+                    self.packet_queue.pop()
+
                     if len(self.packet_queue) < self.queue_length:
                         self.queue_not_full.set()
                     
                     if len(self.packet_queue) == 0:
                         self.queue_not_empty.clear()
-                
                 else:
                     continue
 
@@ -220,6 +225,8 @@ if __name__ == "__main__":
     parser.add_argument('--params-path', required=True,
                       help='Path to config file with queue_length parameter')
     parser.add_argument('--log', help='Path to packet log file (optional)')
+    parser.add_argument('--wait-for-full', action='store_true',
+                      help='Only relay packets when queue is full')
 
     args = parser.parse_args()
 
@@ -239,7 +246,8 @@ if __name__ == "__main__":
         params_path=args.params_path,
         protocol=args.protocol,
         log_packets=bool(args.log),
-        log_path=args.log if args.log else "reorder_log.bin"
+        log_path=args.log if args.log else "reorder_log.bin",
+        wait_for_full_queue=args.wait_for_full
     )
 
     try:

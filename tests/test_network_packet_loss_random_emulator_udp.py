@@ -107,60 +107,11 @@ def analyze_log(log_file: str):
         'total_bursts': len(burst_lengths)
     }
 
-def calculate_theoretical_loss_rate(params: dict, model_name: str) -> float:
-    """Calculate theoretical packet loss rate from GE model parameters"""
-    if model_name.lower() == 'ge_classic':
-        # Extract transition probabilities
-        p_gg = params['GE_Classic']['Good']['transitions']['Good']  # P(Good|Good)
-        p_gb = params['GE_Classic']['Good']['transitions']['Bad']   # P(Bad|Good)
-        p_bg = params['GE_Classic']['Bad']['transitions']['Good']   # P(Good|Bad)
-        p_bb = params['GE_Classic']['Bad']['transitions']['Bad']    # P(Bad|Bad)
-        
-        # Extract success probabilities
-        k = params['GE_Classic']['Good']['params']['k']  # Good state success probability
-        h = params['GE_Classic']['Bad']['params']['h']   # Bad state success probability
-        
-        # Steady state probabilities
-        # π_g = P(Good) = p_bg / (p_gb + p_bg)
-        # π_b = P(Bad) = p_gb / (p_gb + p_bg)
-        pi_g = p_bg / (p_gb + p_bg)
-        pi_b = p_gb / (p_gb + p_bg)
-        
-        # Overall loss probability
-        # P(loss) = P(Good) * (1-k) + P(Bad) * (1-h)
-        # where (1-k) and (1-h) are the loss probabilities in each state
-        return pi_g * (1 - k) + pi_b * (1 - h)
-    
-    elif model_name.lower() == 'ge_pareto_bll':
-        # For Pareto BLL, calculation needs to account for 4-state model
-        states = ['Good', 'Bad', 'Intermediate1', 'Intermediate2']
-        transition_matrix = np.zeros((4, 4))
-        
-        # Build transition matrix
-        for i, from_state in enumerate(states):
-            for j, to_state in enumerate(states):
-                transition_matrix[i][j] = params['GE_Pareto_BLL'][from_state]['transitions'].get(to_state, 0)
-        
-        # Calculate steady state probabilities
-        eigenvals, eigenvecs = np.linalg.eig(transition_matrix.T)
-        steady_state = eigenvecs[:, np.argmin(np.abs(eigenvals - 1))].real
-        steady_state = steady_state / steady_state.sum()
-        
-        # Calculate loss probabilities using Pareto parameters
-        loss_probs = []
-        for state in states:
-            alpha = params['GE_Pareto_BLL'][state]['params']['alpha']
-            lambda_param = params['GE_Pareto_BLL'][state]['params']['lambda']
-            # Simplified loss probability calculation for Pareto
-            loss_prob = 1 / (1 + lambda_param * (alpha - 1))
-            loss_probs.append(loss_prob)
-        
-        # Overall loss probability
-        return np.sum(steady_state * loss_probs)
-    
-    return None
+def calculate_theoretical_loss_rate(params: dict) -> float:
+    """Calculate theoretical packet loss rate from Random Loss model parameters"""
+    return params['Random_Loss']['params']['r']
 
-def visualize_results(stats: dict, model_params: dict, model_name: str):
+def visualize_results(stats: dict, params: dict):
     """Create visualization of packet loss statistics with theoretical comparison"""
     print("[Visualization] Generating plots...")
     plt.style.use('ggplot')
@@ -175,20 +126,21 @@ def visualize_results(stats: dict, model_params: dict, model_name: str):
     
     # Burst Length Histogram
     ax1 = fig.add_subplot(gs[0, 0])
-    bars = ax1.hist(stats['burst_lengths'], 
-                   bins=range(1, max(stats['burst_lengths'])+2), 
-                   align='left',
-                   color='#2e86de',
-                   edgecolor='#1a3c6d',
-                   linewidth=1.2)
-    
-    # Add count labels on top of bars
-    for rect in bars[2]:
-        height = rect.get_height()
-        if height > 0:
-            ax1.text(rect.get_x() + rect.get_width()/2., height,
-                    f'{int(height)}',
-                    ha='center', va='bottom', fontsize=9)
+    if stats['burst_lengths']:
+        bars = ax1.hist(stats['burst_lengths'], 
+                       bins=range(1, max(stats['burst_lengths'])+2), 
+                       align='left',
+                       color='#2e86de',
+                       edgecolor='#1a3c6d',
+                       linewidth=1.2)
+        
+        # Add count labels on top of bars
+        for rect in bars[2]:
+            height = rect.get_height()
+            if height > 0:
+                ax1.text(rect.get_x() + rect.get_width()/2., height,
+                        f'{int(height)}',
+                        ha='center', va='bottom', fontsize=9)
     
     ax1.set_title('Burst Length Distribution', fontsize=14, pad=20, color='#2d3436')
     ax1.set_xlabel('Burst Length (consecutive lost packets)', fontsize=12)
@@ -225,6 +177,7 @@ def visualize_results(stats: dict, model_params: dict, model_name: str):
     ax3 = fig.add_subplot(gs[:, 2])
     ax3.axis('off')
     
+    theoretical_loss = calculate_theoretical_loss_rate(params)
     stats_text = [
         "Network Loss Statistics",
         "\n",
@@ -234,15 +187,10 @@ def visualize_results(stats: dict, model_params: dict, model_name: str):
         f"Difference: {abs(stats['loss_rate'] - theoretical_loss):.2%}",
         "\nBurst Statistics:",
         f"Total Bursts: {stats['total_bursts']}",
-        f"Average Burst Length: {np.mean(stats['burst_lengths']):.2f}",
-        f"Max Burst Length: {np.max(stats['burst_lengths']) if stats['burst_lengths'] else 0}",
-        "\nModel Parameters:",
-        f"p_gg (Good→Good prob): {model_params[model_name]['Good']['transitions']['Good']:.3f}",
-        f"p_gb (Good→Bad prob): {model_params[model_name]['Good']['transitions']['Bad']:.3f}",
-        f"p_bg (Bad→Good prob): {model_params[model_name]['Bad']['transitions']['Good']:.3f}",
-        f"p_bb (Bad→Bad prob): {model_params[model_name]['Bad']['transitions']['Bad']:.3f}",
-        f"k (Good state success): {model_params[model_name]['Good']['params']['k']:.3f}",
-        f"h (Bad state success): {model_params[model_name]['Bad']['params']['h']:.3f}"
+        f"Average Burst Length: {np.mean(stats['burst_lengths']):.2f}" if stats['burst_lengths'] else "Average Burst Length: 0.00",
+        f"Max Burst Length: {max(stats['burst_lengths']) if stats['burst_lengths'] else 0}",
+        "\nRandom Loss Parameters:",
+        f"Loss Probability (r): {params['Random_Loss']['params']['r']:.3f}"
     ]
     
     ax3.text(0.1, 0.95, "\n".join(stats_text), 
@@ -254,16 +202,17 @@ def visualize_results(stats: dict, model_params: dict, model_name: str):
     
     # Add CDF plot
     ax4 = fig.add_subplot(gs[1, 0])
-    sorted_bursts = np.sort(stats['burst_lengths'])
-    cumulative = np.arange(1, len(sorted_bursts) + 1) / len(sorted_bursts)
-    ax4.plot(sorted_bursts, cumulative, color='#2e86de', linewidth=2)
+    if stats['burst_lengths']:
+        sorted_bursts = np.sort(stats['burst_lengths'])
+        cumulative = np.arange(1, len(sorted_bursts) + 1) / len(sorted_bursts)
+        ax4.plot(sorted_bursts, cumulative, color='#2e86de', linewidth=2)
     ax4.set_title('Burst Length CDF', fontsize=14, pad=20)
     ax4.set_xlabel('Burst Length', fontsize=12)
     ax4.set_ylabel('Cumulative Probability', fontsize=12)
     ax4.grid(True, alpha=0.3)
     
     # Add summary title
-    plt.suptitle(f"Network Packet Loss Analysis ({model_name})", 
+    plt.suptitle("Network Packet Loss Analysis (Random Loss Model)", 
                 fontsize=18, y=0.98, 
                 color='#2d3436', fontweight='bold')
     
@@ -277,7 +226,7 @@ if __name__ == "__main__":
     EMULATOR_PORT = 5000
     RECEIVER_PORT = 5001
     NUM_PACKETS = 10000
-    LOG_FILE = "ge_loss_log.bin"
+    LOG_FILE = "random_loss_log.bin"
     
     # Start Network Emulator
     print("[Main] Starting network emulator...")
@@ -288,7 +237,7 @@ if __name__ == "__main__":
     pl_emulator = PacketLossEmulator(
         input_port=EMULATOR_PORT,
         output_port=RECEIVER_PORT,
-        model_name='GE_Classic',
+        model_name='Random_Loss',
         params=params,
         protocol='udp',
         log_packets=True,
@@ -331,5 +280,4 @@ if __name__ == "__main__":
     print("\n[Main] Analyzing results...")
     stats = analyze_log(LOG_FILE)
     print("\n[Main] Visualization:")
-    theoretical_loss = calculate_theoretical_loss_rate(params, 'GE_Classic')
-    visualize_results(stats, params, 'GE_Classic') 
+    visualize_results(stats, params) 

@@ -71,7 +71,7 @@ class GEParetoBLLModel(BaseGEModel):
         else:
             raise ValueError("Unsupported distribution type.")
 
-    def process_packet(self):
+    def should_drop(self):
         """
         Process a packet: Determine if it should be dropped or passed.
         :param bll: Burst Loss Length to process

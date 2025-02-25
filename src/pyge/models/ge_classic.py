@@ -47,7 +47,7 @@ class GEClassicModel(BaseGEModel):
             weights=list(transition_probs.values())
         )[0]
 
-    def process_packet(self):
+    def should_drop(self):
         """
         Process a packet: Determine if it should be dropped or passed.
         Returns:

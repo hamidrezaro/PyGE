@@ -2,13 +2,14 @@ import socket
 import threading
 import time
 import json
-from pyge.models import GEClassicModel, GEParetoBLLModel
+from pyge.models import GEClassicModel, GEParetoBLLModel, RandomLossModel, CommunicationLossModel
 import signal
 import sys
 import struct
 from collections import deque
 from threading import Lock, Event
 import lz4.frame
+
 
 class PacketLossEmulator:
     def __init__(self, input_port: int, output_port: int, 
@@ -50,8 +51,15 @@ class PacketLossEmulator:
         elif model_name.lower() == 'GE_Pareto_BLL'.lower():
             model_params = params['GE_Pareto_BLL']
             return GEParetoBLLModel(model_params)
+        elif model_name.lower() == 'Random_Loss'.lower():
+            model_params = params['Random_Loss']
+            return RandomLossModel(model_params)
+        elif model_name.lower() == 'Communication_Loss'.lower():
+            model_params = params['Communication_Loss']
+            return CommunicationLossModel(model_params)
         else:
             raise ValueError(f"Unknown model: {model_name}")
+
 
     def _init_logger(self):
         """Initialize packet logging system"""
@@ -131,7 +139,7 @@ class PacketLossEmulator:
         
         while self.running:
             data, addr = sock.recvfrom(4096)
-            drop = self.loss_model.process_packet()
+            drop = self.loss_model.should_drop()
             
             if self.log_packets:
                 self._log_packet(data, drop)

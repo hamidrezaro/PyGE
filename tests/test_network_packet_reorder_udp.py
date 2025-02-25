@@ -192,7 +192,8 @@ if __name__ == "__main__":
         input_port=EMULATOR_PORT,
         output_port=RECEIVER_PORT,
         params=PARAMS,
-        protocol='udp'
+        protocol='udp',
+        wait_for_full_queue=False
     )
     
 

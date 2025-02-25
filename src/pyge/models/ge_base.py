@@ -11,7 +11,7 @@ class BaseGEModel(ABC):
         """
         raise NotImplementedError("Transition state method not implemented")
 
-    def process_packet(self):
+    def should_drop(self):
         """
         Process a packet: Determine if it should be dropped or passed.
         """

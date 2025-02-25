@@ -1,7 +1,13 @@
 {
+    "Random_Loss": {
+        "params": {
+            "r": 0.12    
+        }
+    },
     "GE_Pareto_BLL": {
         "Good": {
             "transitions": {
+
                 "Good": 0.959,
                 "Intermediate1": 0.013,
                 "Bad": 0.002,
@@ -72,6 +78,14 @@
             "params": {
                 "h": 0.4
             }
+        }
+    },
+    "Communication_Loss": {
+        "params": {
+            "loss_prob": 0.01,
+            "min_loss_length": 1,
+            "max_loss_length": 5,
+            "cooldown_period": 10
         }
     }
 }
