@@ -226,6 +226,7 @@ def visualize_results(stats, params):
     
     # Calculate theoretical loss rate
     theoretical_loss = calculate_theoretical_loss_rate(params)
+    print(f"Theoretical loss rate: {theoretical_loss}")
     
     stats_text = [
         "Communication Loss Model Statistics",

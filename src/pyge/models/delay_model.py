@@ -83,12 +83,14 @@ class DelayModel:
         pdf_vals = self.pdf(x)
         
         plt.plot(x, pdf_vals, 'r-', lw=2, label='Theoretical PDF')
-        plt.xlabel('Delay (ms)')
-        plt.ylabel('Probability Density')
-        plt.title(f'Network Delay Distribution (n = {n_samples:,})')
-        plt.legend()
+        plt.xlabel('Delay (ms)', fontsize=20)
+        plt.ylabel('Probability Density', fontsize=20)
+        # plt.title(f'Network Delay Distribution (n = {n_samples:,})')
+        plt.legend(fontsize=20)
         plt.grid(True)
-        plt.xlim(0, 300)
+        plt.xlim(0, 120)
+        plt.xticks(fontsize=16)
+        plt.yticks(fontsize=16)
         plt.show()
 
 if __name__ == '__main__':
